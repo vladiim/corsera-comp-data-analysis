@@ -1,36 +1,39 @@
-complete <- function(directory, id = 1:332) {
-  ## 'directory' is a character vector of length 1 indicating
-  ## the location of the CSV files
+complete <- function(directory="specdata", id=1:332) {
 
-  ## 'id' is an integer vector indicating the monitor ID numbers
-  ## to be used
-  
-  ## Return a data frame of the form:
-  ## id nobs
-  ## 1  117
-  ## 2  1041
-  ## ...
-  ## where 'id' is the monitor ID number and 'nobs' is the
-  ## number of complete cases
+  complete.data <- data.frame(id=rep(""), nobs=rep(1), stringsAsFactors=FALSE)
+  n <- 1
 
-  # create a newId array 
-  newId <- array()
   for (i in id) {
-    if (nchar(i) == 1) {
-      i <- paste("00", id)
-    } else if (nchar(id == 2)) {
-      i <- paste("0", id)
-    }
-    # append(newId, i) this is wrong!!!
+    ii   <- fileNumber(i)
+    dir  <- gsub(" ", "", paste(directory, "/", ii, ".csv"))
+    data <- read.csv(dir, header=TRUE, sep="," )
+    nobs <- getNobs(data)
+    complete.data[n, ] <- c(i, nobs)
+    n    <- n+1
   }
+  print(complete.data)
+}
 
-  dir <- gsub(" ", "", paste(directory, "/", id, ".csv"))
-  data <- read.csv(dir, header=TRUE, sep="," )
-
-  if (summarize == TRUE) {
-        print(summary(data))
+fileNumber <- function(i) {
+  if (nchar(i) == 1) {
+    i <- gsub(' ', '', paste("00", i))
+  } else if (nchar(i) == 2) {
+    i <- gsub(' ', '', paste("0", i))
+  } else if (nchar(i) == 3 ) {
+    i <- gsub(' ', '', paste("", i))
   }
+  i
+}
 
-  data
+getNobs <- function(data) {
+  good.obs    <- complete.cases(data$sulfate, data$nitrate)
+  sulfate.obs <- length(data$sulfate[good.obs])
+  nitrate.obs <- length(data$nitrate[good.obs])
 
+  if (sulfate.obs < nitrate.obs) {
+    nobs <- sulfate.obs
+  } else {
+    nobs <- nitrate.obs
+  }
+  nobs
 }
